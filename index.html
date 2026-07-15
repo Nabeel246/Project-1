@@ -1,1 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CardioSense — Heart Disease Risk Predictor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #efe4d3;
+    --fg: #2a1a15;
+    --muted: #6b5a52;
+    --border: #c9b8a7;
+    --heart-deep: #6a1a14;
+    --heart-blood: #a8221d;
+    --heart-bright: #d9382e;
+    --heart-glow: #f27469;
+    --brass: #c9a25a;
+    --brass-dark: #7a5a24;
+    --primary-fg: #fdf7f3;
+    --panel-hi: #faf3e8;
+    --panel-lo: #d9c9b6;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    color: var(--fg);
+    min-height: 100vh;
+    background:
+      radial-gradient(1200px 600px at 20% -10%, #fbf4e8 0%, transparent 60%),
+      radial-gradient(900px 500px at 90% 10%, #e6c6b0 0%, transparent 60%),
+      linear-gradient(180deg, #ece0cd, #ddc9b2);
+    padding: 40px 16px;
+  }
+  .wrap { max-width: 980px; margin: 0 auto; }
+  .serif { font-family: "Playfair Display", Georgia, serif; }
 
+  /* --- Header + Heart --- */
+  header { text-align: center; margin-bottom: 36px; }
+  h1 {
+    font-family: "Playfair Display", Georgia, serif;
+    font-size: clamp(32px, 5vw, 48px);
+    margin: 14px 0 8px;
+    color: var(--heart-deep);
+    text-shadow: 0 1px 0 rgba(255,255,255,0.7), 0 2px 3px rgba(90,20,15,0.35);
+  }
+  header p { color: var(--muted); max-width: 560px; margin: 0 auto; }
+
+  .heart-3d {
+    position: relative;
+    width: 140px; height: 130px;
+    margin: 0 auto;
+    filter: drop-shadow(0 20px 15px rgba(90,20,15,0.45));
+    animation: beat 1.4s ease-in-out infinite;
+  }
+  .heart-3d::before, .heart-3d::after {
+    content: "";
+    position: absolute;
+    width: 80px; height: 130px;
+    background: radial-gradient(circle at 30% 25%, var(--heart-glow), var(--heart-bright) 35%, var(--heart-blood) 65%, var(--heart-deep) 100%);
+    border-radius: 80px 80px 0 0;
+    box-shadow:
+      inset -6px -8px 14px rgba(50,10,8,0.55),
+      inset 8px 8px 14px rgba(255,255,255,0.25);
+  }
+  .heart-3d::before { left: 30px; transform: rotate(-45deg); transform-origin: 0 100%; }
+  .heart-3d::after  { left: 30px; transform: rotate(45deg);  transform-origin: 100% 100%; }
+  @keyframes beat {
+    0%, 60%, 100% { transform: scale(1); }
+    20% { transform: scale(1.07); }
+    40% { transform: scale(0.98); }
+  }
+
+  /* --- Panel --- */
+  .panel {
+    background: linear-gradient(180deg, var(--panel-hi), var(--panel-lo));
+    border-radius: 22px;
+    padding: 28px;
+    border: 1px solid rgba(180,150,120,0.6);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.9),
+      inset 0 -2px 6px rgba(0,0,0,0.08),
+      0 2px 0 rgba(255,255,255,0.6),
+      0 30px 60px -20px rgba(70,25,15,0.35),
+      0 12px 24px -12px rgba(70,25,15,0.35);
+    margin-bottom: 24px;
+  }
+  h2 { font-family: "Playfair Display", Georgia, serif; margin: 0 0 20px; color: #3d2620; }
+  h3 { font-family: "Playfair Display", Georgia, serif; margin: 32px 0 14px; color: #3d2620; }
+
+  .grid { display: grid; gap: 18px; grid-template-columns: repeat(2, 1fr); }
+  .grid-3 { display: grid; gap: 12px; grid-template-columns: repeat(3, 1fr); }
+  @media (max-width: 720px) {
+    .grid, .grid-3 { grid-template-columns: 1fr; }
+  }
+
+  label.field { display: block; }
+  .field-label {
+    display: block;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #4a332c;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.7);
+    margin-bottom: 8px;
+  }
+
+  /* --- Dial (range) --- */
+  .dial-track {
+    padding: 10px 14px;
+    border-radius: 999px;
+    background: linear-gradient(180deg, #cbb69f, #ddc9b2);
+    box-shadow:
+      inset 0 2px 4px rgba(0,0,0,0.2),
+      inset 0 -1px 0 rgba(255,255,255,0.6),
+      0 1px 0 rgba(255,255,255,0.8);
+  }
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 10px;
+    border-radius: 999px;
+    background: linear-gradient(180deg, #a48f7a, #c9b39c);
+    box-shadow: inset 0 2px 3px rgba(0,0,0,0.35);
+    outline: none;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    height: 26px; width: 26px; border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, var(--heart-glow), var(--heart-blood) 60%, var(--heart-deep));
+    border: 2px solid #4a1210;
+    box-shadow:
+      inset 0 2px 2px rgba(255,255,255,0.4),
+      inset 0 -3px 4px rgba(0,0,0,0.35),
+      0 3px 6px rgba(90,20,15,0.5);
+    cursor: grab;
+  }
+  input[type="range"]::-moz-range-thumb {
+    height: 26px; width: 26px; border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, var(--heart-glow), var(--heart-blood) 60%, var(--heart-deep));
+    border: 2px solid #4a1210;
+    box-shadow:
+      inset 0 2px 2px rgba(255,255,255,0.4),
+      inset 0 -3px 4px rgba(0,0,0,0.35),
+      0 3px 6px rgba(90,20,15,0.5);
+    cursor: grab;
+  }
+
+  /* --- Select --- */
+  .skeuo-select {
+    position: relative;
+    border-radius: 14px;
+    padding: 2px;
+    background: linear-gradient(180deg, #a48f7a, #ddc9b2);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.15), inset 0 -1px 0 rgba(255,255,255,0.6);
+  }
+  .skeuo-select::after {
+    content: "▾";
+    position: absolute;
+    right: 16px; top: 50%;
+    transform: translateY(-50%);
+    color: var(--heart-deep);
+    pointer-events: none;
+    font-size: 12px;
+  }
+  .skeuo-select select {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 100%;
+    padding: 12px 36px 12px 14px;
+    border-radius: 12px;
+    background: linear-gradient(180deg, #fbf4e8, #ddc9b2);
+    border: none;
+    color: var(--fg);
+    font-size: 14px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), inset 0 -2px 4px rgba(0,0,0,0.08);
+    outline: none;
+  }
+
+  /* --- Segmented toggle --- */
+  .skeuo-toggle {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    padding: 4px;
+    border-radius: 999px;
+    background: linear-gradient(180deg, #b39d86, #ddc9b2);
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.25), 0 1px 0 rgba(255,255,255,0.7);
+  }
+  .skeuo-toggle button {
+    padding: 10px 14px;
+    border-radius: 999px;
+    font-size: 14px;
+    color: var(--muted);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+  }
+  .skeuo-toggle button.active {
+    background: linear-gradient(180deg, var(--heart-bright), var(--heart-blood));
+    color: var(--primary-fg);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.3),
+      inset 0 -2px 3px rgba(0,0,0,0.25),
+      0 2px 4px rgba(90,20,15,0.4);
+    text-shadow: 0 -1px 0 rgba(0,0,0,0.25);
+  }
+
+  /* --- Switch row --- */
+  .switch-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 16px;
+    border-radius: 14px;
+    background: linear-gradient(180deg, #faf3e8, #ddc9b2);
+    border: 1px solid rgba(180,150,120,0.5);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.85),
+      0 1px 2px rgba(0,0,0,0.08),
+      0 2px 4px rgba(0,0,0,0.06);
+    font-size: 14px;
+    color: #4a332c;
+  }
+  .switch {
+    position: relative;
+    width: 56px; height: 30px;
+    border-radius: 999px;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    transition: background 0.25s;
+  }
+  .switch.off {
+    background: linear-gradient(180deg, #a48f7a, #c9b39c);
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.3), inset 0 -1px 0 rgba(255,255,255,0.5);
+  }
+  .switch.on {
+    background: linear-gradient(180deg, var(--heart-blood), var(--heart-bright));
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.3), 0 0 12px rgba(200,50,40,0.5);
+  }
+  .switch .knob {
+    position: absolute;
+    top: 3px; left: 3px;
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #fff, #e8d9c6 60%, #b39d86);
+    box-shadow: inset 0 -2px 3px rgba(0,0,0,0.25), 0 2px 4px rgba(0,0,0,0.35);
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .switch.on .knob { transform: translateX(26px); }
+
+  /* --- Buttons --- */
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-top: 32px;
+  }
+  .btn-primary {
+    padding: 16px 28px;
+    border-radius: 999px;
+    border: 1px solid #4a1210;
+    color: var(--primary-fg);
+    background: linear-gradient(180deg, var(--heart-bright), var(--heart-blood) 55%, var(--heart-deep));
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.35),
+      inset 0 -3px 6px rgba(0,0,0,0.35),
+      0 6px 14px rgba(90,25,15,0.5),
+      0 2px 3px rgba(0,0,0,0.2);
+    text-shadow: 0 -1px 0 rgba(0,0,0,0.3);
+    font-family: "Playfair Display", Georgia, serif;
+    font-size: 18px;
+    letter-spacing: 0.03em;
+    cursor: pointer;
+  }
+  .btn-primary:hover { filter: brightness(1.05); }
+  .btn-primary:active {
+    transform: translateY(2px);
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.4), 0 2px 4px rgba(90,25,15,0.3);
+  }
+  .btn-ghost {
+    padding: 10px 18px;
+    border-radius: 999px;
+    background: linear-gradient(180deg, #faf3e8, #ddc9b2);
+    border: 1px solid #b39d86;
+    color: var(--fg);
+    cursor: pointer;
+    font-family: inherit;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.7), 0 1px 2px rgba(0,0,0,0.1);
+  }
+
+  /* --- Result --- */
+  .result { display: none; }
+  .result.show { display: block; }
+  .result-grid {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 32px;
+    align-items: center;
+  }
+  @media (max-width: 720px) {
+    .result-grid { grid-template-columns: 1fr; justify-items: center; text-align: center; }
+  }
+
+  .gauge {
+    width: 260px;
+    height: 150px;
+    position: relative;
+    overflow: hidden;
+  }
+  .gauge-face {
+    position: relative;
+    width: 260px;
+    height: 260px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 50% 40%, #fbf4e8, #ddc9b2 70%, #b39d86);
+    box-shadow:
+      inset 0 4px 6px rgba(255,255,255,0.6),
+      inset 0 -8px 20px rgba(0,0,0,0.15),
+      0 10px 30px rgba(70,25,15,0.35);
+    overflow: hidden;
+    border: 8px solid;
+    border-image: linear-gradient(180deg, #e5c78a, #6f5220) 1;
+  }
+  .gauge-arc {
+    position: absolute;
+    inset: 20px;
+    border-radius: 50%;
+    background: conic-gradient(
+      from 270deg,
+      #4fa571 0deg,
+      #b8b23a 60deg,
+      #d68b2b 110deg,
+      #c93a2a 180deg,
+      transparent 180deg
+    );
+    -webkit-mask: radial-gradient(circle, transparent 55%, black 56%, black 78%, transparent 79%);
+    mask: radial-gradient(circle, transparent 55%, black 56%, black 78%, transparent 79%);
+    opacity: 0.85;
+  }
+  .gauge-needle {
+    position: absolute;
+    left: 50%; top: 50%;
+    width: 4px;
+    height: 105px;
+    margin-left: -2px;
+    margin-top: -100px;
+    background: linear-gradient(180deg, var(--heart-deep), var(--heart-bright) 80%, #3a1210);
+    border-radius: 4px 4px 0 0;
+    transform-origin: 50% 100%;
+    transform: rotate(-90deg);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.35);
+    transition: transform 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .gauge-cap {
+    position: absolute;
+    left: 50%; top: 50%;
+    width: 28px; height: 28px;
+    margin-left: -14px; margin-top: -14px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #e5c78a, var(--brass) 55%, var(--brass-dark));
+    box-shadow: inset 0 -2px 3px rgba(0,0,0,0.4), 0 2px 3px rgba(0,0,0,0.3);
+  }
+  .gauge-readout {
+    position: absolute;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: "Playfair Display", Georgia, serif;
+    font-size: 22px;
+    color: var(--heart-deep);
+    text-shadow: 0 1px 0 rgba(255,255,255,0.7);
+  }
+
+  .risk-plate {
+    padding: 22px 26px;
+    border-radius: 16px;
+    color: #fdf7f3;
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.25),
+      inset 0 -3px 6px rgba(0,0,0,0.35),
+      0 10px 24px -8px rgba(0,0,0,0.35);
+    text-shadow: 0 -1px 0 rgba(0,0,0,0.3);
+  }
+  .risk-plate .tag {
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    opacity: 0.85;
+  }
+  .risk-plate .label {
+    font-family: "Playfair Display", Georgia, serif;
+    font-size: 28px;
+    margin-top: 4px;
+  }
+  .risk-plate .prob { margin-top: 8px; font-size: 14px; opacity: 0.95; }
+  .risk-low  { background: linear-gradient(180deg, #5db27e, #276a3f); }
+  .risk-mid  { background: linear-gradient(180deg, #d69537, #8a5518); }
+  .risk-high { background: linear-gradient(180deg, var(--heart-bright), var(--heart-deep)); }
+
+  .disclaimer {
+    margin-top: 20px;
+    font-size: 13px;
+    line-height: 1.55;
+    color: var(--muted);
+  }
+
+  footer {
+    text-align: center;
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 24px;
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="heart-3d" aria-hidden="true"></div>
+      <h1>CardioSense</h1>
+      <p>A tactile heart disease risk estimator. Adjust the dials, flip the switches, and read your risk on the pressure gauge.</p>
+    </header>
+
+    <section class="panel">
+      <h2>Patient Profile</h2>
+      <div class="grid">
+        <label class="field">
+          <span class="field-label" id="lbl-bmi">BMI — 26.0</span>
+          <div class="dial-track"><input type="range" id="bmi" min="12" max="50" step="0.1" value="26" /></div>
+        </label>
+        <label class="field">
+          <span class="field-label" id="lbl-sleep">Sleep — 7 hrs</span>
+          <div class="dial-track"><input type="range" id="sleep" min="1" max="14" step="1" value="7" /></div>
+        </label>
+        <label class="field">
+          <span class="field-label" id="lbl-phys">Physical health issues — 2 days / 30</span>
+          <div class="dial-track"><input type="range" id="phys" min="0" max="30" step="1" value="2" /></div>
+        </label>
+        <label class="field">
+          <span class="field-label" id="lbl-ment">Mental health issues — 2 days / 30</span>
+          <div class="dial-track"><input type="range" id="ment" min="0" max="30" step="1" value="2" /></div>
+        </label>
+        <label class="field">
+          <span class="field-label">Age category</span>
+          <div class="skeuo-select">
+            <select id="age">
+              <option>18-24</option><option>25-29</option><option>30-34</option>
+              <option>35-39</option><option>40-44</option><option selected>45-49</option>
+              <option>50-54</option><option>55-59</option><option>60-64</option>
+              <option>65-69</option><option>70-74</option><option>75-79</option>
+              <option>80 or older</option>
+            </select>
+          </div>
+        </label>
+        <label class="field">
+          <span class="field-label">Sex</span>
+          <div class="skeuo-toggle" id="sex">
+            <button type="button" data-v="Female">Female</button>
+            <button type="button" data-v="Male" class="active">Male</button>
+          </div>
+        </label>
+        <label class="field">
+          <span class="field-label">General health</span>
+          <div class="skeuo-select">
+            <select id="genHealth">
+              <option>Excellent</option><option>Very good</option>
+              <option selected>Good</option><option>Fair</option><option>Poor</option>
+            </select>
+          </div>
+        </label>
+        <label class="field">
+          <span class="field-label">Diabetic status</span>
+          <div class="skeuo-select">
+            <select id="diabetic">
+              <option selected>No</option>
+              <option>No, borderline diabetes</option>
+              <option>Yes (during pregnancy)</option>
+              <option>Yes</option>
+            </select>
+          </div>
+        </label>
+      </div>
+
+      <h3>Lifestyle &amp; Conditions</h3>
+      <div class="grid-3" id="switches">
+        <!-- switches injected by JS -->
+      </div>
+
+      <div class="actions">
+        <button class="btn-primary" id="analyze">Analyze My Heart</button>
+        <button class="btn-ghost" id="reset">Reset dials</button>
+      </div>
+    </section>
+
+    <section class="panel result" id="result">
+      <h2>Cardiac Pressure Gauge</h2>
+      <div class="result-grid">
+        <div class="gauge">
+          <div class="gauge-face">
+            <div class="gauge-arc"></div>
+            <div class="gauge-needle" id="needle"></div>
+            <div class="gauge-cap"></div>
+            <div class="gauge-readout" id="readout">0%</div>
+          </div>
+        </div>
+        <div>
+          <div class="risk-plate" id="plate">
+            <div class="tag">Reading</div>
+            <div class="label" id="riskLabel">Low Risk</div>
+            <div class="prob">Estimated probability of heart disease: <strong id="riskPct">0%</strong></div>
+          </div>
+          <p class="disclaimer">
+            This is an educational estimate based on population-level patterns in the
+            CDC Heart 2020 dataset. It is not a diagnosis. Please consult a licensed
+            clinician for medical advice.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <footer>Crafted with care · CardioSense</footer>
+  </div>
+
+<script>
+(() => {
+  const AGE_CATS = ["18-24","25-29","30-34","35-39","40-44","45-49","50-54","55-59","60-64","65-69","70-74","75-79","80 or older"];
+
+  const SWITCHES = [
+    { id: "smoking",     label: "Smoker",              def: false },
+    { id: "alcohol",     label: "Heavy alcohol use",   def: false },
+    { id: "stroke",      label: "History of stroke",   def: false },
+    { id: "diffWalking", label: "Difficulty walking",  def: false },
+    { id: "physAct",     label: "Physical activity",   def: true  },
+    { id: "asthma",      label: "Asthma",              def: false },
+    { id: "kidney",      label: "Kidney disease",      def: false },
+    { id: "skinCancer",  label: "Skin cancer",         def: false },
+  ];
+
+  const state = {
+    bmi: 26, sleep: 7, phys: 2, ment: 2,
+    age: "45-49", sex: "Male", genHealth: "Good", diabetic: "No",
+    smoking: false, alcohol: false, stroke: false, diffWalking: false,
+    physAct: true, asthma: false, kidney: false, skinCancer: false,
+  };
+
+  // Build switches
+  const switchesEl = document.getElementById("switches");
+  SWITCHES.forEach(s => {
+    const row = document.createElement("div");
+    row.className = "switch-row";
+    row.innerHTML = `
+      <span>${s.label}</span>
+      <button type="button" role="switch" class="switch ${s.def ? "on" : "off"}" data-id="${s.id}">
+        <span class="knob"></span>
+      </button>`;
+    switchesEl.appendChild(row);
+  });
+
+  // Range labels
+  const rangeMap = {
+    bmi:   v => `BMI — ${Number(v).toFixed(1)}`,
+    sleep: v => `Sleep — ${v} hrs`,
+    phys:  v => `Physical health issues — ${v} days / 30`,
+    ment:  v => `Mental health issues — ${v} days / 30`,
+  };
+  ["bmi","sleep","phys","ment"].forEach(id => {
+    const input = document.getElementById(id);
+    const lbl = document.getElementById("lbl-" + id);
+    input.addEventListener("input", () => {
+      state[id] = Number(input.value);
+      lbl.textContent = rangeMap[id](input.value);
+    });
+  });
+
+  // Selects
+  ["age","genHealth","diabetic"].forEach(id => {
+    document.getElementById(id).addEventListener("change", e => state[id] = e.target.value);
+  });
+
+  // Sex toggle
+  const sexEl = document.getElementById("sex");
+  sexEl.addEventListener("click", e => {
+    const btn = e.target.closest("button");
+    if (!btn) return;
+    [...sexEl.children].forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    state.sex = btn.dataset.v;
+  });
+
+  // Switches
+  switchesEl.addEventListener("click", e => {
+    const btn = e.target.closest(".switch");
+    if (!btn) return;
+    const id = btn.dataset.id;
+    state[id] = !state[id];
+    btn.classList.toggle("on", state[id]);
+    btn.classList.toggle("off", !state[id]);
+  });
+
+  // Reset
+  document.getElementById("reset").addEventListener("click", () => location.reload());
+
+  // Risk model — heuristic calibrated from Heart 2020 dataset
+  function computeRisk(f) {
+    let s = -3.2;
+    s += AGE_CATS.indexOf(f.age) * 0.28;
+    if (f.bmi >= 30) s += 0.35;
+    else if (f.bmi >= 25) s += 0.15;
+    else if (f.bmi < 18.5) s += 0.2;
+    if (f.stroke)      s += 1.4;
+    if (f.kidney)      s += 0.9;
+    if (f.diffWalking) s += 0.7;
+    if (f.diabetic === "Yes")                       s += 0.75;
+    else if (f.diabetic === "No, borderline diabetes") s += 0.3;
+    else if (f.diabetic === "Yes (during pregnancy)")  s += 0.15;
+    if (f.asthma)     s += 0.2;
+    if (f.skinCancer) s += 0.25;
+    if (f.smoking)    s += 0.6;
+    if (f.alcohol)    s -= 0.05;
+    if (!f.physAct)   s += 0.3;
+    s += ({ "Excellent": -0.6, "Very good": -0.3, "Good": 0, "Fair": 0.7, "Poor": 1.3 })[f.genHealth];
+    s += (f.phys / 30) * 0.5;
+    s += (f.ment / 30) * 0.2;
+    if (f.sleep < 5 || f.sleep > 10) s += 0.25;
+    if (f.sex === "Male") s += 0.25;
+    return 1 / (1 + Math.exp(-s));
+  }
+
+  document.getElementById("analyze").addEventListener("click", () => {
+    const risk = computeRisk(state);
+    const pct = Math.round(risk * 100);
+    const band = risk < 0.08 ? { label: "Low Risk", tone: "low" }
+              : risk < 0.20 ? { label: "Moderate Risk", tone: "mid" }
+              : { label: "Elevated Risk", tone: "high" };
+
+    document.getElementById("result").classList.add("show");
+    document.getElementById("needle").style.transform = `rotate(${-90 + (pct/100)*180}deg)`;
+    document.getElementById("readout").textContent = pct + "%";
+    document.getElementById("riskPct").textContent = pct + "%";
+    document.getElementById("riskLabel").textContent = band.label;
+    const plate = document.getElementById("plate");
+    plate.classList.remove("risk-low","risk-mid","risk-high");
+    plate.classList.add("risk-" + band.tone);
+    document.getElementById("result").scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+})();
+</script>
+</body>
+</html>
